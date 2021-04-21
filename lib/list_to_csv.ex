@@ -1,9 +1,59 @@
 defmodule ListToCsv do
   @moduledoc """
-  Documentation for `ListToCsv`.
+  `ListToCsv` is main module of this library.
   """
   alias ListToCsv.Option
 
+  @doc """
+  Returns a list with header and body rows
+
+  ## Options
+
+  See `ListToCsv.Option` for details.
+
+  - `:header` - (list({header, keys})) Required.
+    Keys can be atoms, strings, numbers, or functions.
+  - `:length` - (list({keys, length}) | nil) Optional.
+    The length of the list can be variable, so if it is not fixed, the result
+    value is not constant width.
+
+  ## Examples
+
+      iex> ListToCsv.parse(
+      ...>   [
+      ...>     %{
+      ...>       name: "name1",
+      ...>       items: [
+      ...>         %{title: "title1", code: "code1"},
+      ...>         %{title: "title2", code: "code2"},
+      ...>         %{title: "title3", code: "code3"}
+      ...>       ]
+      ...>     },
+      ...>     %{
+      ...>       name: "name2",
+      ...>       items: [
+      ...>         %{title: "title4", code: "code4"},
+      ...>         %{title: "title5", code: "code5"},
+      ...>         %{title: "title6", code: "code6"},
+      ...>         %{title: "title7", code: "code7"},
+      ...>         %{title: "title8", code: "code8"}
+      ...>       ]
+      ...>     }
+      ...>   ],
+      ...>   header: [
+      ...>     {"名前", :name},
+      ...>     {"アイテム#名", [:items, :N, :title]},
+      ...>     {"アイテム#コード", [:items, :N, :code]},
+      ...>     {"item overflow?", [:items, &(length(&1) > 4)]}
+      ...>   ],
+      ...>   length: [items: 4]
+      ...> )
+      [
+        ["名前", "アイテム1名", "アイテム1コード", "アイテム2名", "アイテム2コード", "アイテム3名", "アイテム3コード", "アイテム4名", "アイテム4コード", "item overflow?"],
+        ["name1", "title1", "code1", "title2", "code2", "title3", "code3", "", "", "false"],
+        ["name2", "title4", "code4", "title5", "code5", "title6", "code6", "title7", "code7", "true"]
+      ]
+  """
   @spec parse(list(map()), Option.t()) :: list(list(String.t()))
   def parse(list, options) do
     {header_list, keys_list} = Option.expends(options) |> Enum.unzip()

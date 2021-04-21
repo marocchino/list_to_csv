@@ -1,4 +1,8 @@
 defmodule ListToCsv.Option do
+  @moduledoc """
+  `ListToCsv.Option` contains types and utilities for option.
+  """
+
   @type key() :: String.t() | atom | integer | function
   @type keys() :: list(key()) | key()
   @type t() :: %{
