@@ -25,12 +25,21 @@ Convert list of nested map to two dimensional list of strings.
     ]
   }
 ]
-|> ListToCsv.parse(header: [
-  {"名前", :name},                                # simple get
-  {"アイテム#名", [:items, :N, :title]}           # nested
-  {"アイテム#コード", [:items, :N, :code]},
-  {"item overflow?", [:items, &(length(&1) > 4)]} # function
-], length: [items: 4])
+|> ListToCsv.parse(
+  headers: [
+    "名前",
+    "アイテム#名",
+    "アイテム#コード",
+    "item overflow?"
+  ],
+  keys: [
+    :name,
+    [:items, :N, :title],
+    [:items, :N, :code],
+    [:items, &(length(&1) > 4)]
+  ],
+  length: [items: 4]
+)
 => [
   ["名前", "アイテム1名", "アイテム1コード", "アイテム2名",
    "アイテム2コード", "アイテム3名", "アイテム3コード",
@@ -50,7 +59,7 @@ by adding `list_to_csv` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:list_to_csv, "~> 0.1.0"}
+    {:list_to_csv, "~> 1.0.0"}
   ]
 end
 ```
