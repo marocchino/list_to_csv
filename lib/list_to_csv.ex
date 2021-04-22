@@ -70,7 +70,7 @@ defmodule ListToCsv do
     do: Enum.map(keys_list, &parse_cell(map, &1))
 
   @spec parse_cell(any(), Option.keys()) :: String.t()
-  def parse_cell(map, [key]), do: parse_cell(map, key)
+  def parse_cell(map, key) when not is_list(key), do: parse_cell(map, [key])
 
   def parse_cell(list, [key | rest]) when is_integer(key) do
     List.pop_at(list || [], key - 1)
@@ -81,11 +81,5 @@ defmodule ListToCsv do
   def parse_cell(map, [key | rest]) when is_function(key), do: parse_cell(key.(map), rest)
   def parse_cell(map, [key | rest]) when is_struct(map), do: parse_cell(Map.get(map, key), rest)
   def parse_cell(map, [key | rest]), do: parse_cell(map[key], rest)
-
-  def parse_cell(map, key) when is_integer(key),
-    do: "#{List.pop_at(map || [], key - 1) |> elem(0)}"
-
-  def parse_cell(map, key) when is_function(key), do: "#{key.(map)}"
-  def parse_cell(map, key) when is_struct(map), do: "#{Map.get(map, key)}"
-  def parse_cell(map, key), do: "#{map[key]}"
+  def parse_cell(map, []), do: "#{map}"
 end
