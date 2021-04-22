@@ -1,7 +1,7 @@
 defmodule ListToCsv.MixProject do
   use Mix.Project
 
-  @version "1.0.0"
+  @version "1.1.0"
   @scm_url "https://github.com/marocchino/list_to_csv"
 
   def project do
