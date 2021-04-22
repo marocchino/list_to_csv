@@ -6,6 +6,8 @@ defmodule ListToCsv.Key do
   @type many() :: list(t()) | t()
 
   @doc """
+  build prefix keys with trailing `:N`
+
   ## Examples
 
       iex> build_prefix(:name)
@@ -14,11 +16,11 @@ defmodule ListToCsv.Key do
       iex> build_prefix([:item, :name])
       [:item, :name, :N]
   """
+  @spec build_prefix(many()) :: many()
   def build_prefix(keys), do: List.wrap(keys) ++ [:N]
 
   @doc """
-  Returns a list of keys duplicated `n` times.
-  Replace first :N with current 1 base index.
+  Returns a list of `keys` duplicated `n` times. And replace first `:N` with current 1 base index.
 
   ## Examples
 
@@ -36,10 +38,10 @@ defmodule ListToCsv.Key do
   end
 
   @doc """
-  Returns `true` if list starts with the given `prefix` list;
-  otherwise returns `false`.
+  Returns `true` if `keys` starts with the given `prefix` list; otherwise returns
+  `false`.
 
-  Note that :N can match with `integer`.
+  Note that `:N` can match with `integer`.
 
   ## Examples
 
@@ -72,8 +74,8 @@ defmodule ListToCsv.Key do
   end
 
   @doc """
-  Returns a new list created by replacing occurrences of `pattern` in `subject`
-  with `replacement`. Only the first occurrence is replaced.
+  Returns a new list created by replacing occurrences of `from` in `subject`
+  with `to`. Only the first occurrence is replaced.
 
   ## Examples
 
@@ -83,7 +85,8 @@ defmodule ListToCsv.Key do
       iex> replace_first([:item, :N, :name, :N], :N, 2)
       [:item, 2, :name, :N]
   """
-  def replace_first([], _from, _to), do: []
+  @spec replace_first(list(t()), t(), t()) :: list(t())
+  def replace_first([] = _subject, _from, _to), do: []
   def replace_first([from | tail], from, to), do: [to | tail]
   def replace_first([head | tail], from, to), do: [head | replace_first(tail, from, to)]
 end
