@@ -2,7 +2,10 @@ defmodule ListToCsv do
   @moduledoc """
   `ListToCsv` is main module of this library.
   """
+  alias ListToCsv.Key
   alias ListToCsv.Option
+
+  @type target() :: map() | struct() | keyword()
 
   @doc """
   Returns a list with header and body rows
@@ -54,22 +57,22 @@ defmodule ListToCsv do
         ["name2", "title4", "code4", "title5", "code5", "title6", "code6", "title7", "code7", "true"]
       ]
   """
-  @spec parse(list(map()), Option.t()) :: list(list(String.t()))
+  @spec parse(list(target()), Option.t()) :: list(list(String.t()))
   def parse(list, options) do
-    {header_list, keys_list} = Option.expends(options) |> Enum.unzip()
+    {header_list, keys_list} = Option.expand(options) |> Enum.unzip()
     [header_list | Enum.map(list, &parse_row(&1, keys_list))]
   end
 
-  @spec parse_rows(list(map()), Option.keys()) :: list(list(String.t()))
+  @spec parse_rows(list(target()), Key.many()) :: list(list(String.t()))
   def parse_rows(list, keys_list) do
     Enum.map(list, &parse_row(&1, keys_list))
   end
 
-  @spec parse_row(map(), list(Option.keys())) :: list(String.t())
+  @spec parse_row(target(), list(Key.many())) :: list(String.t())
   def parse_row(map, keys_list),
     do: Enum.map(keys_list, &parse_cell(map, &1))
 
-  @spec parse_cell(any(), Option.keys()) :: String.t()
+  @spec parse_cell(any(), Key.many()) :: String.t()
   def parse_cell(map, key) when not is_list(key), do: parse_cell(map, [key])
 
   def parse_cell(list, [key | rest]) when is_integer(key) do

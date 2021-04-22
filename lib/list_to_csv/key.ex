@@ -1,0 +1,123 @@
+defmodule ListToCsv.Key do
+  @moduledoc """
+    `ListToCsv.Key` contains types and utilities for keys.
+  """
+  @type t() :: String.t() | atom | integer | function
+  @type many() :: list(t()) | t()
+
+  @spec expand(list(many()), list({many(), integer})) :: list(many())
+  def expand(header, length),
+    do: Enum.reduce(length, header, &do_expand/2)
+
+  def do_expand({keys, n}, headers) do
+    matcher = &starts_with?(&1, build_prefix(keys))
+
+    case chunks(headers, matcher) do
+      {prefix, body, []} ->
+        Enum.concat(prefix, duplicate(body, n))
+
+      {prefix, body, suffix} ->
+        Enum.concat([prefix, duplicate(body, n), do_expand({keys, n}, suffix)])
+    end
+  end
+
+  @doc """
+  ## Examples
+
+      iex> build_prefix(:name)
+      [:name, :N]
+
+      iex> build_prefix([:item, :name])
+      [:item, :name, :N]
+  """
+  def build_prefix(keys), do: List.wrap(keys) ++ [:N]
+
+  @doc """
+  Returns a list of keys duplicated `n` times.
+  Replace first :N with current 1 base index.
+
+  ## Examples
+
+      iex> duplicate([[:name, :N]], 2)
+      [[:name, 1], [:name, 2]]
+
+      iex> duplicate([[:name, :N, :item, :N]], 2)
+      [[:name, 1, :item, :N], [:name, 2, :item, :N]]
+  """
+  @spec duplicate(list(many()), integer()) :: list(many())
+  def duplicate(keys, n) do
+    Enum.flat_map(1..n, fn i ->
+      Enum.map(keys, &replace_first(&1, :N, i))
+    end)
+  end
+
+  @doc """
+  Returns `true` if list starts with the given `prefix` list;
+  otherwise returns `false`.
+
+  Note that :N can match with `integer`.
+
+  ## Examples
+
+      iex> starts_with?(:name, [:item, :N])
+      false
+
+      iex> starts_with?([:item, :N, :name], [:item, :N])
+      true
+
+      iex> starts_with?([:name], [:item, :N])
+      false
+
+      iex> starts_with?([:item, 1, :name, :N, :first], [:item, :N, :name, :N])
+      true
+
+      iex> starts_with?([:packages, :N, :name], [:item, :N])
+      false
+  """
+  @spec starts_with?(many(), list(t())) :: boolean
+  def starts_with?(keys, _prefix) when not is_list(keys), do: false
+  def starts_with?(keys, prefix) when length(keys) < length(prefix), do: false
+
+  def starts_with?(keys, prefix) do
+    Enum.zip(prefix, keys)
+    |> Enum.all?(fn
+      {a, a} -> true
+      {:N, n} when is_integer(n) -> true
+      {_, _} -> false
+    end)
+  end
+
+  @doc """
+  Returns a new list created by replacing occurrences of `pattern` in `subject`
+  with `replacement`. Only the first occurrence is replaced.
+
+  ## Examples
+
+      iex> replace_first([:item, :N, :name], :N, 1)
+      [:item, 1, :name]
+
+      iex> replace_first([:item, :N, :name, :N], :N, 2)
+      [:item, 2, :name, :N]
+  """
+  def replace_first([], _from, _to), do: []
+  def replace_first([from | tail], from, to), do: [to | tail]
+  def replace_first([head | tail], from, to), do: [head | replace_first(tail, from, to)]
+
+  @doc """
+  split list 3 part with respect orders
+  - 1st not matched with `fun`
+  - 2nd matched with `fun`
+  - 3rd not matched with `fun`
+
+  ## Examples
+
+      iex> chunks([1, 2, 3, 2, 1, 3, 2], &(&1 == 3))
+      {[1, 2], [3], [2, 1, 3, 2]}
+  """
+  @spec chunks(list(), function()) :: {list(), list(), list()}
+  def chunks(list, fun) do
+    {prefix, tail} = Enum.split_while(list, &(!fun.(&1)))
+    {body, suffix} = Enum.split_while(tail, fun)
+    {prefix, body, suffix}
+  end
+end

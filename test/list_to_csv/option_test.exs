@@ -6,8 +6,8 @@ defmodule ListToCsv.OptionTest do
   import ListToCsv.Option
   doctest ListToCsv.Option
 
-  test "expends/1" do
-    assert [{"name", :name}] == expends(header: [{"name", :name}])
+  test "expand/1" do
+    assert [{"name", :name}] == expand(header: [{"name", :name}])
 
     fun = &(length(&1) > 3)
 
@@ -38,7 +38,7 @@ defmodule ListToCsv.OptionTest do
              {"package.1.weight", [:packages, 1, :weight]},
              {"package.2.weight", [:packages, 2, :weight]}
            ] ==
-             expends(
+             expand(
                header: [
                  {"name", :name},
                  {"item.#.name", [:goods, :N, :name]},
@@ -57,7 +57,7 @@ defmodule ListToCsv.OptionTest do
              )
   end
 
-  test "expends_header/2" do
+  test "do_expand/2" do
     fun = &(length(&1) > 3)
 
     assert [
@@ -70,31 +70,14 @@ defmodule ListToCsv.OptionTest do
              {"item.3.description", [:goods, 3, :description]},
              {"item.overflow?", [:goods, fun]}
            ] ==
-             expends_header(
+             do_expand(
+               {:goods, 3},
                [
                  {"id", :id},
                  {"item.#.name", [:goods, :N, :name]},
                  {"item.#.description", [:goods, :N, :description]},
                  {"item.overflow?", [:goods, fun]}
-               ],
-               :goods,
-               3
+               ]
              )
-  end
-
-  test "replace_first/3" do
-    assert [:item, 1, :name] == replace_first([:item, :N, :name], :N, 1)
-    assert [:item, 1, :name, :N] == replace_first([:item, :N, :name, :N], :N, 1)
-  end
-
-  test "match_keys?" do
-    assert match_keys?([:item, :N, :name], [:item, :N])
-    refute match_keys?([:name], [:item, :N])
-    refute match_keys?([:packages, :N, :name], [:item, :N])
-    assert match_keys?([:item, 1, :name, :N, :first], [:item, :N, :name, :N])
-  end
-
-  test "chunks/2" do
-    assert {[1, 2], [3], [2, 1, 3, 2]} = chunks([1, 2, 3, 2, 1, 3, 2], &(&1 == 3))
   end
 end

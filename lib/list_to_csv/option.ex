@@ -2,65 +2,39 @@ defmodule ListToCsv.Option do
   @moduledoc """
   `ListToCsv.Option` contains types and utilities for option.
   """
+  alias ListToCsv.Header
+  alias ListToCsv.Key
 
-  @type key() :: String.t() | atom | integer | function
-  @type keys() :: list(key()) | key()
-  @type t() :: %{
-          header: list({String.t(), keys}),
-          length: list({keys(), integer}) | nil
-        }
+  @type t() :: [
+          header: list({Header.t(), Key.many()}),
+          length: list({Key.many(), integer}) | nil
+        ]
 
-  @spec expends(t()) :: list({String.t(), keys()})
-  def expends(options) do
-    Enum.reduce(options[:length] || [], options[:header], fn {keys, n}, acc ->
-      expends_header(acc, keys, n)
-    end)
-  end
+  @spec expand(t()) :: list({Header.t(), Key.many()})
+  def expand(header: header, length: length),
+    do: Enum.reduce(length, header, &do_expand/2)
 
-  def expends_header(headers, keys, n) do
-    keys_with_n = List.wrap(keys) ++ [:N]
+  def expand(header: header), do: header
 
-    case chunks(headers, fn {_, k} -> match_keys?(List.wrap(k), keys_with_n) end) do
+  def do_expand({keys, n}, headers) do
+    matcher = &starts_with?(&1, Key.build_prefix(keys))
+
+    case Key.chunks(headers, matcher) do
       {prefix, body, []} ->
-        prefix ++ duplicate(body, n)
+        Enum.concat(prefix, duplicate(body, n))
 
       {prefix, body, suffix} ->
-        prefix ++
-          duplicate(body, n) ++
-          expends_header(suffix, keys, n)
+        Enum.concat([prefix, duplicate(body, n), do_expand({keys, n}, suffix)])
     end
   end
 
   def duplicate(list, n) do
-    Enum.flat_map(1..n, fn i ->
-      Enum.map(list, fn {header, keys} ->
-        {
-          String.replace(header, "#", "#{i}", global: false),
-          replace_first(keys, :N, i)
-        }
-      end)
-    end)
+    {headers, keys} = Enum.unzip(list)
+
+    Enum.zip(Header.duplicate(headers, n), Key.duplicate(keys, n))
   end
 
-  def replace_first([], _from, _to), do: []
-  def replace_first([from | tail], from, to), do: [to | tail]
-  def replace_first([head | tail], from, to), do: [head | replace_first(tail, from, to)]
-
-  def chunks(list, fun) do
-    {prefix, tail} = Enum.split_while(list, &(!fun.(&1)))
-    {body, suffix} = Enum.split_while(tail, fun)
-    {prefix, body, suffix}
-  end
-
-  @spec match_keys?(list(key()), list(key())) :: boolean
-  def match_keys?(keys, sub_keys) when length(keys) < length(sub_keys), do: false
-
-  def match_keys?(keys, sub_keys) do
-    Enum.zip(sub_keys, keys)
-    |> Enum.all?(fn
-      {a, a} -> true
-      {:N, n} when is_integer(n) -> true
-      {_, _} -> false
-    end)
+  def starts_with?({_, keys}, prefix) do
+    Key.starts_with?(keys, prefix)
   end
 end
