@@ -78,6 +78,7 @@ defmodule ListToCsv do
     |> parse_cell(rest)
   end
 
+  def parse_cell(map, [key | rest]) when is_function(key), do: parse_cell(key.(map), rest)
   def parse_cell(map, [key | rest]) when is_struct(map), do: parse_cell(Map.get(map, key), rest)
   def parse_cell(map, [key | rest]), do: parse_cell(map[key], rest)
 

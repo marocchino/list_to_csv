@@ -32,5 +32,6 @@ defmodule ListToCsvTest do
     assert "false" == ListToCsv.parse_cell(%{c: [%{d: [false]}]}, [:c, 1, :d, 1])
     assert "" == ListToCsv.parse_cell(%{c: [%{d: [false]}]}, [:c, 2, :d, 2])
     assert "20" == ListToCsv.parse_cell(%{c: %{d: 4, e: 5}}, [:c, &(&1.d * &1.e)])
+    assert "22" == ListToCsv.parse_cell(%{c: %{d: 4, e: 5}}, [:c, &(&1.d * &1.e), &(&1 + 2)])
   end
 end
