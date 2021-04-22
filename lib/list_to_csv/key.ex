@@ -2,7 +2,7 @@ defmodule ListToCsv.Key do
   @moduledoc """
     `ListToCsv.Key` contains types and utilities for keys.
   """
-  @type t() :: String.t() | atom | integer | function
+  @type t() :: String.t() | atom | integer | function | {function, many}
   @type many() :: list(t()) | t()
 
   @doc """

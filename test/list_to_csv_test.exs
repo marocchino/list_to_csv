@@ -86,5 +86,22 @@ defmodule ListToCsvTest do
                  &String.duplicate(&1.name, 2)
                ])
     end
+
+    test "composite function" do
+      # no arity
+      assert "1" == ListToCsv.parse_cell(nil, {fn -> 1 end, []})
+
+      assert "8" ==
+               ListToCsv.parse_cell(
+                 {%{length: 2}, %{size: 4}},
+                 {&(&1 * &2), [[1, :length], [2, :size]]}
+               )
+
+      assert "16" ==
+               ListToCsv.parse_cell(
+                 %{item: {%{length: 2}, %{size: 4}}},
+                 [:item, {&(&1 * &2), [[1, :length], [2, :size]]}, &(&1 * 2)]
+               )
+    end
   end
 end

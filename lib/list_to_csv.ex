@@ -117,31 +117,33 @@ defmodule ListToCsv do
   end
 
   @spec parse_rows(list(target()), Key.many()) :: list(list(String.t()))
-  def parse_rows(list, keys_list) do
-    Enum.map(list, &parse_row(&1, keys_list))
-  end
+  def parse_rows(list, keys_list), do: Enum.map(list, &parse_row(&1, keys_list))
 
   @spec parse_row(target(), list(Key.many())) :: list(String.t())
-  def parse_row(map, keys_list),
-    do: Enum.map(keys_list, &parse_cell(map, &1))
+  def parse_row(map, keys_list), do: Enum.map(keys_list, &parse_cell(map, &1))
 
   @spec parse_cell(any(), Key.many()) :: String.t()
-  def parse_cell(map, key) when not is_list(key), do: parse_cell(map, [key])
+  def parse_cell(map, key), do: "#{get(map, key)}"
 
-  def parse_cell(tuple, [key | rest]) when is_integer(key) and is_tuple(tuple) do
-    elem(tuple, key - 1) |> parse_cell(rest)
+  @spec get(any(), Key.many()) :: any()
+  def get(map, key) when not is_list(key), do: get(map, [key])
+
+  def get(map, [{fun, keys} | rest]) when is_function(fun) and is_list(keys) do
+    apply(fun, Enum.map(keys, &get(map, &1))) |> get(rest)
+  end
+
+  def get(tuple, [key | rest]) when is_integer(key) and is_tuple(tuple) do
+    elem(tuple, key - 1) |> get(rest)
   rescue
-    ArgumentError -> nil |> parse_cell(rest)
+    ArgumentError -> nil |> get(rest)
   end
 
-  def parse_cell(list, [key | rest]) when is_integer(key) do
-    List.pop_at(list || [], key - 1)
-    |> elem(0)
-    |> parse_cell(rest)
+  def get(list, [key | rest]) when is_integer(key) do
+    List.pop_at(list || [], key - 1) |> elem(0) |> get(rest)
   end
 
-  def parse_cell(map, [key | rest]) when is_function(key), do: parse_cell(key.(map), rest)
-  def parse_cell(map, [key | rest]) when is_struct(map), do: parse_cell(Map.get(map, key), rest)
-  def parse_cell(map, [key | rest]), do: parse_cell(map[key], rest)
-  def parse_cell(map, []), do: "#{map}"
+  def get(map, [key | rest]) when is_function(key), do: get(key.(map), rest)
+  def get(map, [key | rest]) when is_struct(map), do: get(Map.get(map, key), rest)
+  def get(map, [key | rest]), do: get(map[key], rest)
+  def get(map, []), do: map
 end
