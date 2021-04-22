@@ -78,11 +78,13 @@ defmodule ListToCsv do
     |> parse_cell(rest)
   end
 
+  def parse_cell(map, [key | rest]) when is_struct(map), do: parse_cell(Map.get(map, key), rest)
   def parse_cell(map, [key | rest]), do: parse_cell(map[key], rest)
 
   def parse_cell(map, key) when is_integer(key),
     do: "#{List.pop_at(map || [], key - 1) |> elem(0)}"
 
   def parse_cell(map, key) when is_function(key), do: "#{key.(map)}"
+  def parse_cell(map, key) when is_struct(map), do: "#{Map.get(map, key)}"
   def parse_cell(map, key), do: "#{map[key]}"
 end
