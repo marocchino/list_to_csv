@@ -1,7 +1,7 @@
 defmodule ListToCsv.MixProject do
   use Mix.Project
 
-  @version "0.1.2"
+  @version "1.0.0"
   @scm_url "https://github.com/marocchino/list_to_csv"
 
   def project do
@@ -29,7 +29,7 @@ defmodule ListToCsv.MixProject do
   end
 
   defp description() do
-    "Convert a list of nested maps to `list(list(String.t))` or CSV. Can be used with GraphQL."
+    "Convert a list of nested maps to `list(list(String.t))` or CSV. Can be used with GraphQL or Ecto."
   end
 
   # Run "mix help deps" to learn about dependencies.
