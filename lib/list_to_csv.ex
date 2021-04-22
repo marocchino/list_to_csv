@@ -128,6 +128,12 @@ defmodule ListToCsv do
   @spec parse_cell(any(), Key.many()) :: String.t()
   def parse_cell(map, key) when not is_list(key), do: parse_cell(map, [key])
 
+  def parse_cell(tuple, [key | rest]) when is_integer(key) and is_tuple(tuple) do
+    elem(tuple, key - 1) |> parse_cell(rest)
+  rescue
+    ArgumentError -> nil |> parse_cell(rest)
+  end
+
   def parse_cell(list, [key | rest]) when is_integer(key) do
     List.pop_at(list || [], key - 1)
     |> elem(0)
