@@ -5,22 +5,6 @@ defmodule ListToCsv.Key do
   @type t() :: String.t() | atom | integer | function
   @type many() :: list(t()) | t()
 
-  @spec expand(list(many()), list({many(), integer})) :: list(many())
-  def expand(header, length),
-    do: Enum.reduce(length, header, &do_expand/2)
-
-  def do_expand({keys, n}, headers) do
-    matcher = &starts_with?(&1, build_prefix(keys))
-
-    case chunks(headers, matcher) do
-      {prefix, body, []} ->
-        Enum.concat(prefix, duplicate(body, n))
-
-      {prefix, body, suffix} ->
-        Enum.concat([prefix, duplicate(body, n), do_expand({keys, n}, suffix)])
-    end
-  end
-
   @doc """
   ## Examples
 
@@ -102,22 +86,4 @@ defmodule ListToCsv.Key do
   def replace_first([], _from, _to), do: []
   def replace_first([from | tail], from, to), do: [to | tail]
   def replace_first([head | tail], from, to), do: [head | replace_first(tail, from, to)]
-
-  @doc """
-  split list 3 part with respect orders
-  - 1st not matched with `fun`
-  - 2nd matched with `fun`
-  - 3rd not matched with `fun`
-
-  ## Examples
-
-      iex> chunks([1, 2, 3, 2, 1, 3, 2], &(&1 == 3))
-      {[1, 2], [3], [2, 1, 3, 2]}
-  """
-  @spec chunks(list(), function()) :: {list(), list(), list()}
-  def chunks(list, fun) do
-    {prefix, tail} = Enum.split_while(list, &(!fun.(&1)))
-    {body, suffix} = Enum.split_while(tail, fun)
-    {prefix, body, suffix}
-  end
 end

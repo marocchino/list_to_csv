@@ -1,8 +1,14 @@
 defmodule ListToCsvTest do
+  @moduledoc """
+    test of ListToCsv
+  """
   use ExUnit.Case, async: true
   doctest ListToCsv
 
   defmodule Post do
+    @moduledoc """
+      for struct test
+    """
     defstruct name: "name", child: nil
   end
 

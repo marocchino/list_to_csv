@@ -14,13 +14,20 @@ defmodule ListToCsv do
 
   See `ListToCsv.Option` for details.
 
-  - `:header` - (list({header, keys})) Required.
+  - `:headers` - (list(string)) Optional.
+  - `:Keys` - (list(Key.many())) Required.
     Keys can be atoms, strings, numbers, or functions.
-  - `:length` - (list({keys, length}) | nil) Optional.
+  - `:length` - (list({Key.many(), length}) | nil) Optional.
     The length of the list can be variable, so if it is not fixed, the result
     value is not constant width.
 
   ## Examples
+
+      iex> ListToCsv.parse([%{name: "bob"}], headers: ["name"], keys: [:name])
+      [["name"], ["bob"]]
+
+      iex> ListToCsv.parse([%{name: "bob"}], keys: [:name])
+      [["bob"]]
 
       iex> ListToCsv.parse(
       ...>   [
@@ -43,11 +50,17 @@ defmodule ListToCsv do
       ...>       ]
       ...>     }
       ...>   ],
-      ...>   header: [
-      ...>     {"名前", :name},
-      ...>     {"アイテム#名", [:items, :N, :title]},
-      ...>     {"アイテム#コード", [:items, :N, :code]},
-      ...>     {"item overflow?", [:items, &(length(&1) > 4)]}
+      ...>   headers: [
+      ...>     "名前",
+      ...>     "アイテム#名",
+      ...>     "アイテム#コード",
+      ...>     "item overflow?"
+      ...>   ],
+      ...>   keys: [
+      ...>     :name,
+      ...>     [:items, :N, :title],
+      ...>     [:items, :N, :code],
+      ...>     [:items, &(length(&1) > 4)]
       ...>   ],
       ...>   length: [items: 4]
       ...> )
@@ -56,11 +69,51 @@ defmodule ListToCsv do
         ["name1", "title1", "code1", "title2", "code2", "title3", "code3", "", "", "false"],
         ["name2", "title4", "code4", "title5", "code5", "title6", "code6", "title7", "code7", "true"]
       ]
+
+      iex> ListToCsv.parse(
+      ...>   [
+      ...>     %{
+      ...>       name: "name1",
+      ...>       items: [
+      ...>         %{title: "title1", code: "code1"},
+      ...>         %{title: "title2", code: "code2"},
+      ...>         %{title: "title3", code: "code3"}
+      ...>       ]
+      ...>     },
+      ...>     %{
+      ...>       name: "name2",
+      ...>       items: [
+      ...>         %{title: "title4", code: "code4"},
+      ...>         %{title: "title5", code: "code5"},
+      ...>         %{title: "title6", code: "code6"},
+      ...>         %{title: "title7", code: "code7"},
+      ...>         %{title: "title8", code: "code8"}
+      ...>       ]
+      ...>     }
+      ...>   ],
+      ...>   keys: [
+      ...>     :name,
+      ...>     [:items, :N, :title],
+      ...>     [:items, :N, :code],
+      ...>     [:items, &(length(&1) > 4)]
+      ...>   ],
+      ...>   length: [items: 4]
+      ...> )
+      [
+        ["name1", "title1", "code1", "title2", "code2", "title3", "code3", "", "", "false"],
+        ["name2", "title4", "code4", "title5", "code5", "title6", "code6", "title7", "code7", "true"]
+      ]
   """
   @spec parse(list(target()), Option.t()) :: list(list(String.t()))
   def parse(list, options) do
-    {header_list, keys_list} = Option.expand(options) |> Enum.unzip()
-    [header_list | Enum.map(list, &parse_row(&1, keys_list))]
+    case options[:headers] do
+      nil ->
+        parse_rows(list, Option.expand(options))
+
+      _ ->
+        {header_list, keys_list} = Option.expand(options) |> Enum.unzip()
+        [header_list | parse_rows(list, keys_list)]
+    end
   end
 
   @spec parse_rows(list(target()), Key.many()) :: list(list(String.t()))

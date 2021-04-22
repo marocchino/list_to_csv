@@ -7,7 +7,9 @@ defmodule ListToCsv.OptionTest do
   doctest ListToCsv.Option
 
   test "expand/1" do
-    assert [{"name", :name}] == expand(header: [{"name", :name}])
+    assert [{"name", :name}] == expand(headers: ["name"], keys: [:name])
+
+    assert [:name] == expand(keys: [:name])
 
     fun = &(length(&1) > 3)
 
@@ -39,15 +41,70 @@ defmodule ListToCsv.OptionTest do
              {"package.2.weight", [:packages, 2, :weight]}
            ] ==
              expand(
-               header: [
-                 {"name", :name},
-                 {"item.#.name", [:goods, :N, :name]},
-                 {"item.#.description", [:goods, :N, :description]},
-                 {"item.#.color.#.name", [:goods, :N, :color, :N, :name]},
-                 {"item.#.color.#.code", [:goods, :N, :color, :N, :code]},
-                 {"item.#.color.overflow?", [:goods, :N, :color, fun]},
-                 {"item.overflow?", [:goods, fun]},
-                 {"package.#.weight", [:packages, :N, :weight]}
+               headers: [
+                 "name",
+                 "item.#.name",
+                 "item.#.description",
+                 "item.#.color.#.name",
+                 "item.#.color.#.code",
+                 "item.#.color.overflow?",
+                 "item.overflow?",
+                 "package.#.weight"
+               ],
+               keys: [
+                 :name,
+                 [:goods, :N, :name],
+                 [:goods, :N, :description],
+                 [:goods, :N, :color, :N, :name],
+                 [:goods, :N, :color, :N, :code],
+                 [:goods, :N, :color, fun],
+                 [:goods, fun],
+                 [:packages, :N, :weight]
+               ],
+               length: [
+                 {:goods, 3},
+                 {:packages, 2},
+                 {[:goods, :N, :color], 2}
+               ]
+             )
+
+    assert [
+             :name,
+             [:goods, 1, :name],
+             [:goods, 1, :description],
+             [:goods, 1, :color, 1, :name],
+             [:goods, 1, :color, 1, :code],
+             [:goods, 1, :color, 2, :name],
+             [:goods, 1, :color, 2, :code],
+             [:goods, 1, :color, fun],
+             [:goods, 2, :name],
+             [:goods, 2, :description],
+             [:goods, 2, :color, 1, :name],
+             [:goods, 2, :color, 1, :code],
+             [:goods, 2, :color, 2, :name],
+             [:goods, 2, :color, 2, :code],
+             [:goods, 2, :color, fun],
+             [:goods, 3, :name],
+             [:goods, 3, :description],
+             [:goods, 3, :color, 1, :name],
+             [:goods, 3, :color, 1, :code],
+             [:goods, 3, :color, 2, :name],
+             [:goods, 3, :color, 2, :code],
+             [:goods, 3, :color, fun],
+             [:goods, fun],
+             [:packages, 1, :weight],
+             [:packages, 2, :weight]
+           ] ==
+             expand(
+               keys: [
+                 :name,
+                 [:goods, :N, :name],
+                 [:goods, :N, :description],
+                 [:goods, :N, :color, :N, :name],
+                 [:goods, :N, :color, :N, :code],
+                 [:goods, :N, :color, fun],
+                 [:goods, fun],
+                 [:packages, :N, :weight]
                ],
                length: [
                  {:goods, 3},
@@ -77,6 +134,26 @@ defmodule ListToCsv.OptionTest do
                  {"item.#.name", [:goods, :N, :name]},
                  {"item.#.description", [:goods, :N, :description]},
                  {"item.overflow?", [:goods, fun]}
+               ]
+             )
+
+    assert [
+             :id,
+             [:goods, 1, :name],
+             [:goods, 1, :description],
+             [:goods, 2, :name],
+             [:goods, 2, :description],
+             [:goods, 3, :name],
+             [:goods, 3, :description],
+             [:goods, fun]
+           ] ==
+             do_expand(
+               {:goods, 3},
+               [
+                 :id,
+                 [:goods, :N, :name],
+                 [:goods, :N, :description],
+                 [:goods, fun]
                ]
              )
   end
