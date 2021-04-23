@@ -112,7 +112,9 @@ defmodule ListToCsv.Option do
       false
   """
   @spec starts_with?({Header.t(), Key.many()} | Key.many(), list(Key.t())) :: boolean
-  def starts_with?({_header, keys}, prefix), do: Key.starts_with?(keys, prefix)
+  def starts_with?({header, keys}, prefix) when is_binary(header),
+    do: Key.starts_with?(keys, prefix)
+
   def starts_with?(keys, prefix), do: Key.starts_with?(keys, prefix)
 
   @doc """

@@ -2,8 +2,8 @@ defmodule ListToCsv.Key do
   @moduledoc """
     `ListToCsv.Key` contains types and utilities for keys.
   """
-  @type t() :: String.t() | atom | integer | function | {function, many}
-  @type many() :: list(t()) | t()
+  @type t() :: String.t() | atom() | integer() | function()
+  @type many() :: list(t()) | t() | {function(), many()}
 
   @doc """
   build prefix keys with trailing `:N`
@@ -29,6 +29,10 @@ defmodule ListToCsv.Key do
 
       iex> duplicate([[:name, :N, :item, :N]], 2)
       [[:name, 1, :item, :N], [:name, 2, :item, :N]]
+
+      iex> duplicate([{&(&1 + &2), [[:item, :N, :quantity], :capacity]}], 2)
+      [{&(&1 + &2), [[:item, 1, :quantity], :capacity]},
+       {&(&1 + &2), [[:item, 2, :quantity], :capacity]}]
   """
   @spec duplicate(list(many()), integer()) :: list(many())
   def duplicate(keys, n) do
@@ -59,8 +63,15 @@ defmodule ListToCsv.Key do
 
       iex> starts_with?([:packages, :N, :name], [:item, :N])
       false
+
+      iex> starts_with?({&(&1 + &2), [[:item, :N, :quantity], :capacity]}, [:item, :N])
+      true
   """
   @spec starts_with?(many(), list(t())) :: boolean
+  def starts_with?({fun, keys}, prefix) when is_function(fun) and is_list(keys) do
+    Enum.any?(keys, &starts_with?(&1, prefix))
+  end
+
   def starts_with?(keys, _prefix) when not is_list(keys), do: false
   def starts_with?(keys, prefix) when length(keys) < length(prefix), do: false
 
@@ -79,14 +90,29 @@ defmodule ListToCsv.Key do
 
   ## Examples
 
+      iex> replace_first(:item, :N, 1)
+      :item
+
+      iex> replace_first([:item], :N, 1)
+      [:item]
+
       iex> replace_first([:item, :N, :name], :N, 1)
       [:item, 1, :name]
 
       iex> replace_first([:item, :N, :name, :N], :N, 2)
       [:item, 2, :name, :N]
+
+      iex> replace_first({&(&1 + &2), [[:item, :N, :quantity], :capacity]}, :N, 3)
+      {&(&1 + &2), [[:item, 3, :quantity], :capacity]}
   """
   @spec replace_first(list(t()), t(), t()) :: list(t())
   def replace_first([] = _subject, _from, _to), do: []
   def replace_first([from | tail], from, to), do: [to | tail]
   def replace_first([head | tail], from, to), do: [head | replace_first(tail, from, to)]
+
+  def replace_first({fun, subjects}, from, to) when is_function(fun) do
+    {fun, Enum.map(subjects, &replace_first(&1, from, to))}
+  end
+
+  def replace_first(subject, _from, _to), do: subject
 end
